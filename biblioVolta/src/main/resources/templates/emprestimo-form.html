@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Registrar Empréstimo</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .aluno-card {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .aluno-card.visivel { display: block; }
+        .aluno-card-nome { font-weight: 600; font-size: 1rem; color: #166534; }
+        .aluno-card-info { font-size: 0.875rem; color: #4b5563; margin-top: 0.25rem; }
+        .rgm-wrapper { display: flex; gap: 0.5rem; align-items: flex-start; }
+        .rgm-wrapper .form-control { flex: 1; }
+        .erro-rgm { color: #dc2626; font-size: 0.85rem; margin-top: 0.35rem; display: none; }
+        .erro-rgm.visivel { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span>📚</span> Biblioteca
+    </div>
+    <div class="navbar-user">
+        <span>Olá, <strong th:text="${usuario.nome}">Usuário</strong></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button type="submit" class="btn btn-outline-sm">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container container-form">
+
+    <div class="form-card">
+
+        <div class="form-card-header">
+            <h2>📤 Registrar Empréstimo</h2>
+            <a th:href="@{/dashboard}" class="btn btn-ghost">← Voltar</a>
+        </div>
+
+        <!-- INFO DO LIVRO -->
+        <div class="livro-info-card">
+            <div class="livro-info-icone">📗</div>
+            <div>
+                <div class="livro-info-titulo" th:text="${livro.titulo}">Título do Livro</div>
+                <div class="livro-info-autor" th:text="${livro.autor}">Autor</div>
+                <div th:if="${livro.isbn}" class="livro-info-isbn">ISBN: <span th:text="${livro.isbn}"></span></div>
+            </div>
+        </div>
+
+        <!-- ERRO DO SERVIDOR (RGM não encontrado) -->
+        <div th:if="${erroRgm}" class="alert alert-erro" style="margin-bottom:1rem;">
+            ⚠️ <span th:text="${erroRgm}"></span>
+        </div>
+
+        <!-- FORMULÁRIO -->
+        <form th:action="@{/livros/{id}/emprestar(id=${livro.id})}" method="post" id="formEmprestimo">
+
+            <div class="form-group">
+                <label for="rgm">RGM do Aluno <span class="obrigatorio">*</span></label>
+                <div class="rgm-wrapper">
+                    <input type="text"
+                           id="rgm"
+                           name="rgm"
+                           placeholder="Ex: 12345678"
+                           class="form-control"
+                           autocomplete="off"
+                           required>
+                    <button type="button" id="btnBuscar" class="btn btn-secondary">Buscar</button>
+                </div>
+                <div class="erro-rgm" id="erroRgmJs">Aluno não encontrado. Verifique o RGM ou cadastre o aluno.</div>
+
+                <!-- Card com dados do aluno encontrado -->
+                <div class="aluno-card" id="alunoCard">
+                    <div class="aluno-card-nome" id="alunoNome"></div>
+                    <div class="aluno-card-info">RGM: <span id="alunoRgm"></span> &nbsp;|&nbsp; Curso: <span id="alunoCurso"></span></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dataDevolucaoPrevista">Data de Devolução Prevista <span class="obrigatorio">*</span></label>
+                <input type="date"
+                       id="dataDevolucaoPrevista"
+                       name="dataDevolucaoPrevista"
+                       class="form-control"
+                       th:min="${dataMinima}"
+                       required>
+            </div>
+
+            <div class="form-acoes">
+                <a th:href="@{/dashboard}" class="btn btn-ghost">Cancelar</a>
+                <button type="submit" id="btnConfirmar" class="btn btn-primary" disabled>Confirmar Empréstimo</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script th:inline="javascript">
+    const dataMinima = /*[[${dataMinima}]]*/ '';
+    const campoDevolucao = document.getElementById('dataDevolucaoPrevista');
+    campoDevolucao.min = dataMinima;
+    campoDevolucao.value = dataMinima;
+
+    const btnBuscar = document.getElementById('btnBuscar');
+    const campoRgm = document.getElementById('rgm');
+    const alunoCard = document.getElementById('alunoCard');
+    const erroRgmJs = document.getElementById('erroRgmJs');
+    const btnConfirmar = document.getElementById('btnConfirmar');
+
+    function resetBusca() {
+        alunoCard.classList.remove('visivel');
+        erroRgmJs.classList.remove('visivel');
+        btnConfirmar.disabled = true;
+    }
+
+    campoRgm.addEventListener('input', resetBusca);
+
+    btnBuscar.addEventListener('click', () => {
+        const rgm = campoRgm.value.trim();
+        if (!rgm) return;
+
+        resetBusca();
+        btnBuscar.textContent = '...';
+        btnBuscar.disabled = true;
+
+        fetch('/alunos/buscar?rgm=' + encodeURIComponent(rgm))
+            .then(res => {
+                if (!res.ok) throw new Error('não encontrado');
+                return res.json();
+            })
+            .then(aluno => {
+                document.getElementById('alunoNome').textContent = aluno.nome;
+                document.getElementById('alunoRgm').textContent = aluno.rgm;
+                document.getElementById('alunoCurso').textContent = aluno.curso;
+                alunoCard.classList.add('visivel');
+                btnConfirmar.disabled = false;
+            })
+            .catch(() => {
+                erroRgmJs.classList.add('visivel');
+            })
+            .finally(() => {
+                btnBuscar.textContent = 'Buscar';
+                btnBuscar.disabled = false;
+            });
+    });
+
+    campoRgm.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); btnBuscar.click(); }
+    });
+</script>
+
+</body>
+</html>

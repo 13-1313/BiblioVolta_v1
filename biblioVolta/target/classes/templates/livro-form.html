@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Cadastrar Livro</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span></span> Biblioteca
+    </div>
+    <div class="navbar-user">
+        <span>Olá, <strong th:text="${usuario.nome}">Usuário</strong></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button type="submit" class="btn btn-outline-sm">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container container-form">
+
+    <div class="form-card">
+
+        <div class="form-card-header">
+            <h2>Cadastrar Novo Livro</h2>
+            <a th:href="@{/dashboard}" class="btn btn-ghost">← Voltar</a>
+        </div>
+
+        <form th:action="@{/livros/salvar}" th:object="${livro}" method="post">
+
+            <div class="form-group">
+                <label for="titulo">Título <span class="obrigatorio">*</span></label>
+                <input type="text"
+                       id="titulo"
+                       th:field="*{titulo}"
+                       placeholder="Ex: Dom Casmurro"
+                       class="form-control"
+                       th:classappend="${#fields.hasErrors('titulo')} ? 'input-erro' : ''">
+                <span class="erro-msg" th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="autor">Autor <span class="obrigatorio">*</span></label>
+                <input type="text"
+                       id="autor"
+                       th:field="*{autor}"
+                       placeholder="Ex: Machado de Assis"
+                       class="form-control"
+                       th:classappend="${#fields.hasErrors('autor')} ? 'input-erro' : ''">
+                <span class="erro-msg" th:if="${#fields.hasErrors('autor')}" th:errors="*{autor}"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="isbn">ISBN <span class="opcional">(opcional)</span></label>
+                <input type="text"
+                       id="isbn"
+                       th:field="*{isbn}"
+                       placeholder="Ex: 978-85-359-0277-5"
+                       class="form-control">
+            </div>
+
+            <div class="form-acoes">
+                <a th:href="@{/dashboard}" class="btn btn-ghost">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Cadastrar Livro</button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

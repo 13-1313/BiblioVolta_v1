@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span></span> BiblioVOLTA
+    </div>
+    <div class="navbar-user">
+        <span>Olá, <strong th:text="${usuario.nome}">Usuário</strong></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button type="submit" class="btn btn-outline-sm">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- ALERTAS -->
+    <div th:if="${sucesso}" class="alert alert-sucesso">
+        ✅ <span th:text="${sucesso}"></span>
+    </div>
+
+    <!-- CARDS DE RESUMO -->
+    <div class="cards-resumo">
+        <div class="card-resumo card-total">
+            <div class="card-resumo-numero" th:text="${totalLivros}">0</div>
+            <div class="card-resumo-label">Total de Livros</div>
+        </div>
+        <div class="card-resumo card-disponivel">
+            <div class="card-resumo-numero" th:text="${totalDisponiveis}">0</div>
+            <div class="card-resumo-label">Disponíveis</div>
+        </div>
+        <div class="card-resumo card-emprestado">
+            <div class="card-resumo-numero" th:text="${totalEmprestados}">0</div>
+            <div class="card-resumo-label">Emprestados</div>
+        </div>
+    </div>
+
+    <!-- BARRA DE AÇÕES -->
+    <div class="toolbar">
+        <form th:action="@{/dashboard}" method="get" class="search-form">
+            <input type="text"
+                   name="busca"
+                   th:value="${busca}"
+                   placeholder="🔍 Buscar por título..."
+                   class="search-input">
+            <button type="submit" class="btn btn-secondary">Buscar</button>
+            <a th:href="@{/dashboard}" class="btn btn-ghost">Limpar</a>
+        </form>
+
+        <div class="filtros">
+            <a th:href="@{/dashboard}" class="badge"
+               th:classappend="${statusFiltro == null and busca == null} ? 'badge-ativo' : ''">Todos</a>
+            <a th:href="@{/dashboard(status='DISPONIVEL')}" class="badge badge-disponivel"
+               th:classappend="${statusFiltro == 'DISPONIVEL'} ? 'badge-ativo' : ''">Disponível</a>
+            <a th:href="@{/dashboard(status='EMPRESTADO')}" class="badge badge-emprestado"
+               th:classappend="${statusFiltro == 'EMPRESTADO'} ? 'badge-ativo' : ''">Emprestado</a>
+            <a th:href="@{/dashboard(status='DEVOLVIDO')}" class="badge badge-devolvido"
+               th:classappend="${statusFiltro == 'DEVOLVIDO'} ? 'badge-ativo' : ''">Devolvido</a>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;">
+            <a th:href="@{/alunos/novo}" class="btn btn-primary">+ Novo Aluno</a>
+            <a th:href="@{/livros/novo}" class="btn btn-primary">+ Novo Livro</a>
+        </div>
+    </div>
+
+    <!-- TABELA DE LIVROS -->
+    <div class="tabela-container">
+        <table class="tabela" th:if="${not #lists.isEmpty(livros)}">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>ISBN</th>
+                    <th>Status</th>
+                    <th>Emprestado para</th>
+                    <th>Devolução Prevista</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="livro : ${livros}">
+                    <td th:text="${livro.titulo}">Título</td>
+                    <td th:text="${livro.autor}">Autor</td>
+                    <td th:text="${livro.isbn != null ? livro.isbn : '-'}">ISBN</td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${livro.status.name() == 'DISPONIVEL'} ? 'status-disponivel' :
+                                             (${livro.status.name() == 'EMPRESTADO'} ? 'status-emprestado' : 'status-devolvido')"
+                              th:text="${livro.status.descricao}">
+                        </span>
+                    </td>
+                    <td th:text="${livro.nomeEmprestador != null ? livro.nomeEmprestador : '-'}">-</td>
+                    <td th:text="${livro.dataDevolucaoPrevista != null ? #temporals.format(livro.dataDevolucaoPrevista, 'dd/MM/yyyy') : '-'}">-</td>
+                    <td class="acoes">
+                        <!-- Emprestar -->
+                        <a th:if="${livro.status.name() == 'DISPONIVEL' or livro.status.name() == 'DEVOLVIDO'}"
+                           th:href="@{/livros/{id}/emprestar(id=${livro.id})}"
+                           class="btn btn-sm btn-emprestimo" title="Emprestar">📤 Emprestar</a>
+
+                        <!-- Devolver -->
+                        <form th:if="${livro.status.name() == 'EMPRESTADO'}"
+                              th:action="@{/livros/{id}/devolver(id=${livro.id})}" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-devolucao" title="Devolver">📥 Devolver</button>
+                        </form>
+
+                        <!-- Marcar disponível -->
+                        <form th:if="${livro.status.name() == 'DEVOLVIDO'}"
+                              th:action="@{/livros/{id}/disponivel(id=${livro.id})}" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-disponivel" title="Disponível">✅ Disponível</button>
+                        </form>
+
+                        <!-- Deletar -->
+                        <form th:action="@{/livros/{id}/deletar(id=${livro.id})}" method="post" style="display:inline"
+                              onsubmit="return confirm('Deseja realmente remover este livro?')">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Remover">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- ESTADO VAZIO -->
+        <div class="estado-vazio" th:if="${#lists.isEmpty(livros)}">
+            <div class="estado-vazio-icone">📭</div>
+            <h3>Nenhum livro encontrado</h3>
+            <p>Cadastre o primeiro livro clicando em <strong>+ Novo Livro</strong></p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Auto-esconder alertas após 4 segundos
+    setTimeout(() => {
+        const alertas = document.querySelectorAll('.alert');
+        alertas.forEach(a => a.style.opacity = '0');
+        setTimeout(() => alertas.forEach(a => a.remove()), 400);
+    }, 4000);
+</script>
+
+</body>
+</html>

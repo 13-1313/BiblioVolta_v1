@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Erro</title>
+    <style>
+        body { font-family: monospace; padding: 24px; background: #1e1e1e; color: #f8f8f2; }
+        h2 { color: #ff5555; margin-bottom: 8px; }
+        .box { background: #282a36; padding: 16px; border-radius: 8px; margin-bottom: 16px; white-space: pre-wrap; word-break: break-all; }
+        .label { color: #6272a4; font-size: 12px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <h2>Erro Interno</h2>
+    <div class="label">URL</div>
+    <div class="box" th:text="${url}">-</div>
+    <div class="label">Exceção</div>
+    <div class="box" th:text="${exception}">-</div>
+    <div class="label">Mensagem</div>
+    <div class="box" th:text="${message}">-</div>
+    <div th:if="${cause}">
+        <div class="label">Causa</div>
+        <div class="box" th:text="${cause}">-</div>
+    </div>
+    <div class="label">Stack Trace</div>
+    <div class="box" th:text="${stacktrace}">-</div>
+</body>
+</html>
